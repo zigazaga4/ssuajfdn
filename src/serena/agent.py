@@ -24,7 +24,7 @@ from serena.ls_manager import LanguageServerManager
 from serena.project import Project
 from serena.prompt_factory import SerenaPromptFactory
 from serena.task_executor import TaskExecutor
-from serena.tools import ActivateProjectTool, GetCurrentConfigTool, ReplaceContentTool, Tool, ToolMarker, ToolRegistry
+from serena.tools import Tool, ToolMarker, ToolRegistry
 from serena.util.gui import system_has_usable_display
 from serena.util.inspection import iter_subclasses
 from serena.util.logging import MemoryLogHandler
@@ -69,7 +69,7 @@ class ToolSet:
     Represents a set of tools by their names.
     """
 
-    LEGACY_TOOL_NAME_MAPPING = {"replace_regex": ReplaceContentTool.get_name_from_cls()}
+    LEGACY_TOOL_NAME_MAPPING: dict[str, str] = {}
     """
     maps legacy tool names to their new names for backward compatibility
     """
@@ -179,6 +179,10 @@ class SerenaAgent:
 
         # project-specific instances, which will be initialized upon project activation
         self._active_project: Project | None = None
+
+        # Multi-project support: cache of loaded projects (path -> Project)
+        # Projects are loaded lazily when first accessed via get_or_create_project()
+        self._projects: dict[str, Project] = {}
 
         # adjust log level
         serena_log_level = self.serena_config.log_level
@@ -366,11 +370,6 @@ class SerenaAgent:
                 log.info(
                     "Applying tool inclusion/exclusion definitions for single-project context based on project '%s'", project.project_name
                 )
-                tool_inclusion_definitions.append(
-                    ToolInclusionDefinition(
-                        excluded_tools=[ActivateProjectTool.get_name_from_cls(), GetCurrentConfigTool.get_name_from_cls()]
-                    )
-                )
                 tool_inclusion_definitions.append(project.project_config)
         return tool_inclusion_definitions
 
@@ -430,6 +429,69 @@ class SerenaAgent:
         if project is None:
             raise ValueError("No active project. Please activate a project first.")
         return project
+
+    def get_or_create_project(self, project_path: str | None = None) -> Project:
+        """
+        Get or create a project by path for multi-project support.
+
+        If project_path is None, returns the active project.
+        If project_path is provided, loads/creates the project and initializes its language server
+        if needed. Projects are cached in _projects dict to avoid re-initialization.
+
+        :param project_path: the path to the project root or the name of the project, or None to use the active project
+        :return: the project instance
+        :raises ProjectNotFoundError: if the project could not be found or created
+        :raises ValueError: if no project_path is provided and no active project exists
+        """
+        # If no project path specified, use the active project
+        if project_path is None:
+            return self.get_active_project_or_raise()
+
+        # Normalize the path to use as cache key
+        if os.path.isdir(project_path):
+            cache_key = os.path.abspath(project_path)
+        else:
+            # It's a project name, try to resolve it
+            project_instance = self.serena_config.get_project(project_path)
+            if project_instance is not None:
+                cache_key = project_instance.project_root
+            else:
+                cache_key = project_path  # Will fail later if not found
+
+        # Return cached project if available
+        if cache_key in self._projects:
+            return self._projects[cache_key]
+
+        # Load or create the project
+        project_instance = self.load_project_from_path_or_name(project_path, autogenerate=True)
+        if project_instance is None:
+            raise ProjectNotFoundError(
+                f"Project '{project_path}' not found: Not a valid project name or directory. "
+                f"Existing project names: {self.serena_config.project_names}"
+            )
+
+        # Initialize language server if needed (synchronously for multi-project mode)
+        if self.is_using_language_server() and project_instance.language_server_manager is None:
+            log.info(f"Initializing language server for project {project_instance.project_name}")
+            tool_timeout = self.serena_config.tool_timeout
+            if tool_timeout is None or tool_timeout < 0:
+                ls_timeout = None
+            else:
+                if tool_timeout < 10:
+                    raise ValueError(f"Tool timeout must be at least 10 seconds, but is {tool_timeout} seconds")
+                ls_timeout = tool_timeout - 5
+
+            project_instance.create_language_server_manager(
+                log_level=self.serena_config.log_level,
+                ls_timeout=ls_timeout,
+                trace_lsp_communication=self.serena_config.trace_lsp_communication,
+                ls_specific_settings=self.serena_config.ls_specific_settings,
+            )
+
+        # Cache the project using normalized path
+        self._projects[cache_key] = project_instance
+
+        return project_instance
 
     def set_modes(self, modes: list[SerenaAgentMode]) -> None:
         """

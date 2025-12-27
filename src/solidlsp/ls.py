@@ -1343,6 +1343,126 @@ class SolidLanguageServer(ABC):
 
         return ls_types.Hover(**response)  # type: ignore
 
+    def request_call_hierarchy_prepare(
+        self, relative_file_path: str, line: int, column: int
+    ) -> list[lsp_types.CallHierarchyItem] | None:
+        """
+        Prepare call hierarchy for the symbol at the given position.
+        This returns CallHierarchyItem(s) that can be used with incoming/outgoing calls requests.
+
+        :param relative_file_path: The relative path of the file
+        :param line: The line number (0-based)
+        :param column: The column number (0-based)
+        :return: List of CallHierarchyItem or None if not supported
+        """
+        with self.open_file(relative_file_path):
+            response = self.server.send.prepare_call_hierarchy(
+                {
+                    "textDocument": {"uri": pathlib.Path(os.path.join(self.repository_root_path, relative_file_path)).as_uri()},
+                    "position": {
+                        "line": line,
+                        "character": column,
+                    },
+                }
+            )
+
+        if response is None:
+            return None
+
+        return response  # type: ignore
+
+    def request_incoming_calls(
+        self, item: lsp_types.CallHierarchyItem
+    ) -> list[lsp_types.CallHierarchyIncomingCall] | None:
+        """
+        Get all incoming calls (callers) for a CallHierarchyItem.
+
+        :param item: The CallHierarchyItem to find callers for
+        :return: List of incoming calls or None
+        """
+        response = self.server.send.incoming_calls({"item": item})
+
+        if response is None:
+            return None
+
+        return response  # type: ignore
+
+    def request_outgoing_calls(
+        self, item: lsp_types.CallHierarchyItem
+    ) -> list[lsp_types.CallHierarchyOutgoingCall] | None:
+        """
+        Get all outgoing calls (callees) for a CallHierarchyItem.
+
+        :param item: The CallHierarchyItem to find callees for
+        :return: List of outgoing calls or None
+        """
+        response = self.server.send.outgoing_calls({"item": item})
+
+        if response is None:
+            return None
+
+        return response  # type: ignore
+
+    def request_type_hierarchy_prepare(
+        self, relative_file_path: str, line: int, column: int
+    ) -> list[lsp_types.TypeHierarchyItem] | None:
+        """
+        Prepare type hierarchy for the symbol at the given position.
+        This returns TypeHierarchyItem(s) that can be used with supertypes/subtypes requests.
+
+        :param relative_file_path: The relative path of the file
+        :param line: The line number (0-based)
+        :param column: The column number (0-based)
+        :return: List of TypeHierarchyItem or None if not supported
+        """
+        with self.open_file(relative_file_path):
+            response = self.server.send.prepare_type_hierarchy(
+                {
+                    "textDocument": {"uri": pathlib.Path(os.path.join(self.repository_root_path, relative_file_path)).as_uri()},
+                    "position": {
+                        "line": line,
+                        "character": column,
+                    },
+                }
+            )
+
+        if response is None:
+            return None
+
+        return response  # type: ignore
+
+    def request_supertypes(
+        self, item: lsp_types.TypeHierarchyItem
+    ) -> list[lsp_types.TypeHierarchyItem] | None:
+        """
+        Get all supertypes (parent classes/interfaces) for a TypeHierarchyItem.
+
+        :param item: The TypeHierarchyItem to find supertypes for
+        :return: List of supertype items or None
+        """
+        response = self.server.send.supertypes({"item": item})
+
+        if response is None:
+            return None
+
+        return response  # type: ignore
+
+    def request_subtypes(
+        self, item: lsp_types.TypeHierarchyItem
+    ) -> list[lsp_types.TypeHierarchyItem] | None:
+        """
+        Get all subtypes (child classes/implementations) for a TypeHierarchyItem.
+
+        :param item: The TypeHierarchyItem to find subtypes for
+        :return: List of subtype items or None
+        """
+        response = self.server.send.subtypes({"item": item})
+
+        if response is None:
+            return None
+
+        return response  # type: ignore
+
     def retrieve_symbol_body(
         self,
         symbol: ls_types.UnifiedSymbolInformation | LSPTypes.SymbolInformation,

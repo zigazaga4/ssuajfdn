@@ -11,18 +11,9 @@ prompt: |
   a diagram in addition to your text-based communication. Note that in the chat interface you have various rendering
   options for text, html, and mermaid diagrams, as has been explained to you in your initial instructions.
 excluded_tools: []
-included_optional_tools:
-  - switch_modes
+included_optional_tools: []
 
 tool_description_overrides:
   find_symbol: |
     Retrieves symbols matching `name_path_pattern` in a file.
     Use `depth > 0` to include children. `name_path_pattern` can be: "foo": any symbol named "foo"; "foo/bar": "bar" within "foo"; "/foo/bar": only top-level "foo/bar"
-  replace_content: |
-    Replaces content in files. Preferred for smaller edits where symbol-level tools aren't appropriate.
-    Use mode "regex" with wildcards (.*?) to match large sections efficiently: "beginning.*?end" instead of specifying exact content.
-    Essential for multi-line replacements.
-  search_for_pattern: |
-    Flexible pattern search across codebase. Prefer symbolic operations when possible.
-    Uses DOTALL matching. Use non-greedy quantifiers (.*?) to avoid over-matching.
-    Supports file filtering via globs and code-only restriction.

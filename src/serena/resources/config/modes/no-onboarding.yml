@@ -1,6 +1,4 @@
-description: The onboarding process is not used (memories may have been created externally)
+description: Mode without onboarding process
 prompt: |
   The onboarding process is not applied.
-excluded_tools:
-  - onboarding
-  - check_onboarding_performed
+excluded_tools: []

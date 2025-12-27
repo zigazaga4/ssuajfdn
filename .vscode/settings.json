@@ -11,4 +11,9 @@
         "sensai",
         "vibing"
     ],
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#402816",
+        "titleBar.activeBackground": "#59381E",
+        "titleBar.activeForeground": "#FDFAF8"
+    },
 }

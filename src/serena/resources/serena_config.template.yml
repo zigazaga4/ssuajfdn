@@ -61,7 +61,7 @@ excluded_tools: []
 included_optional_tools: []
 # list of optional tools (which are disabled by default) to be included
 
-default_max_tool_answer_chars: 150000
+default_max_tool_answer_chars: 500000
 # Used as default for tools where the apply method has a default maximal answer length.
 # Even though the value of the max_answer_chars can be changed when calling the tool, it may make sense to adjust this default
 # through the global configuration.

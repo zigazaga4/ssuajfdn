@@ -670,6 +670,147 @@ class LanguageServerSymbolRetriever:
 
         return result
 
+    def get_enriched_symbol_info(
+        self,
+        symbol: LanguageServerSymbol,
+        relative_path: str,
+    ) -> dict[str, Any]:
+        """
+        Get enriched information for a symbol including documentation, call hierarchy,
+        type hierarchy, and references.
+
+        :param symbol: The symbol to enrich
+        :param relative_path: The relative path to the file containing the symbol
+        :return: A dictionary with all enriched symbol information
+        """
+        lang_server = self.get_language_server(relative_path)
+
+        # Get symbol's selection position for LSP requests
+        line = symbol.location.line
+        column = symbol.location.column
+
+        # Get documentation via hover
+        documentation = None
+        try:
+            hover_result = lang_server.request_hover(relative_path, line, column)
+            if hover_result is not None:
+                contents = hover_result.get("contents")
+                if contents:
+                    # Handle different hover content formats
+                    if isinstance(contents, str):
+                        documentation = contents
+                    elif isinstance(contents, dict):
+                        # MarkupContent format
+                        documentation = contents.get("value", str(contents))
+                    elif isinstance(contents, list):
+                        # MarkedString[] format
+                        documentation = "\n".join(
+                            c.get("value", str(c)) if isinstance(c, dict) else str(c)
+                            for c in contents
+                        )
+        except Exception:
+            pass  # Hover not supported or failed
+
+        # Get call hierarchy (incoming and outgoing calls)
+        incoming_calls = []
+        outgoing_calls = []
+        try:
+            call_items = lang_server.request_call_hierarchy_prepare(relative_path, line, column)
+            if call_items:
+                for item in call_items:
+                    # Get incoming calls (who calls this)
+                    incoming = lang_server.request_incoming_calls(item)
+                    if incoming:
+                        for call in incoming:
+                            caller = call.get("from", {})
+                            incoming_calls.append({
+                                "name": caller.get("name"),
+                                "kind": caller.get("kind"),
+                                "uri": caller.get("uri"),
+                                "range": caller.get("selectionRange"),
+                            })
+
+                    # Get outgoing calls (what this calls)
+                    outgoing = lang_server.request_outgoing_calls(item)
+                    if outgoing:
+                        for call in outgoing:
+                            callee = call.get("to", {})
+                            outgoing_calls.append({
+                                "name": callee.get("name"),
+                                "kind": callee.get("kind"),
+                                "uri": callee.get("uri"),
+                                "range": callee.get("selectionRange"),
+                            })
+        except Exception:
+            pass  # Call hierarchy not supported
+
+        # Get type hierarchy (supertypes and subtypes)
+        supertypes = []
+        subtypes = []
+        try:
+            type_items = lang_server.request_type_hierarchy_prepare(relative_path, line, column)
+            if type_items:
+                for item in type_items:
+                    # Get supertypes (parent classes/interfaces)
+                    supers = lang_server.request_supertypes(item)
+                    if supers:
+                        for s in supers:
+                            supertypes.append({
+                                "name": s.get("name"),
+                                "kind": s.get("kind"),
+                                "uri": s.get("uri"),
+                            })
+
+                    # Get subtypes (child classes/implementations)
+                    subs = lang_server.request_subtypes(item)
+                    if subs:
+                        for s in subs:
+                            subtypes.append({
+                                "name": s.get("name"),
+                                "kind": s.get("kind"),
+                                "uri": s.get("uri"),
+                            })
+        except Exception:
+            pass  # Type hierarchy not supported
+
+        # Get references (who uses this symbol)
+        references = []
+        try:
+            refs = self.find_referencing_symbols(
+                symbol.get_name_path(),
+                relative_file_path=relative_path,
+                include_body=False,
+            )
+            for ref in refs:
+                references.append({
+                    "symbol_name": ref.symbol.name,
+                    "symbol_path": ref.symbol.get_name_path(),
+                    "relative_path": ref.symbol.location.relative_path,
+                    "line": ref.line,
+                })
+        except Exception:
+            pass  # References lookup failed
+
+        # Build enriched result
+        result = symbol.to_dict(
+            kind=True,
+            location=True,
+            include_body=True,
+            depth=1,  # Include immediate children
+        )
+
+        # Add enriched fields
+        result["documentation"] = documentation
+        result["relationships"] = {
+            "incoming_calls": incoming_calls,
+            "outgoing_calls": outgoing_calls,
+            "supertypes": supertypes,
+            "subtypes": subtypes,
+            "referenced_by": references,
+        }
+
+        return result
+
 
 class JetBrainsSymbol(Symbol):
     class SymbolDict(TypedDict):

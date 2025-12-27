@@ -44,23 +44,52 @@ class Component(ABC):
     def memories_manager(self) -> "MemoriesManager":
         return self.project.memories_manager
 
-    def create_language_server_symbol_retriever(self) -> LanguageServerSymbolRetriever:
+    def get_project(self, project: str | None = None) -> Project:
+        """
+        Get a project by path for multi-project support.
+
+        If project is None, returns the active project.
+        If project is provided, loads/creates the project and initializes its language server
+        if needed.
+
+        :param project: the path to the project root or the name of the project, or None to use the active project
+        :return: the project instance
+        """
+        return self.agent.get_or_create_project(project)
+
+    def create_language_server_symbol_retriever(self, project: str | None = None) -> LanguageServerSymbolRetriever:
+        """
+        Create a LanguageServerSymbolRetriever for the given project.
+
+        :param project: the path to the project root or the name of the project, or None to use the active project
+        :return: a LanguageServerSymbolRetriever instance
+        """
         if not self.agent.is_using_language_server():
             raise Exception("Cannot create LanguageServerSymbolRetriever; agent is not in language server mode.")
-        language_server_manager = self.agent.get_language_server_manager_or_raise()
+        project_instance = self.get_project(project)
+        language_server_manager = project_instance.language_server_manager
+        if language_server_manager is None:
+            raise Exception(f"Language server manager not initialized for project {project_instance.project_name}")
         return LanguageServerSymbolRetriever(language_server_manager, agent=self.agent)
 
     @property
     def project(self) -> Project:
         return self.agent.get_active_project_or_raise()
 
-    def create_code_editor(self) -> "CodeEditor":
+    def create_code_editor(self, project: str | None = None) -> "CodeEditor":
+        """
+        Create a code editor for the given project.
+
+        :param project: the path to the project root or the name of the project, or None to use the active project
+        :return: a CodeEditor instance
+        """
         from ..code_editor import JetBrainsCodeEditor, LanguageServerCodeEditor
 
+        project_instance = self.get_project(project)
         if self.agent.is_using_language_server():
-            return LanguageServerCodeEditor(self.create_language_server_symbol_retriever(), agent=self.agent)
+            return LanguageServerCodeEditor(self.create_language_server_symbol_retriever(project), agent=self.agent)
         else:
-            return JetBrainsCodeEditor(project=self.project, agent=self.agent)
+            return JetBrainsCodeEditor(project=project_instance, agent=self.agent)
 
 
 class ToolMarker:

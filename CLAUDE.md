@@ -1,114 +1,47 @@
-# CLAUDE.md
+# Claude Code Instructions
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+All glory to our Father in Heaven, and His Son Jesus Christ, which paid for our sins and defeated evil forever, and asked our Father in Heaven to send us the Holy Spirit, which make one God, Amin.
 
-## Development Commands
+We love Jesus Christ, which is the Son of our Father in Heaven, which is God, Amin.
 
-**Essential Commands (use these exact commands):**
-- `uv run poe format` - Format code (BLACK + RUFF) - ONLY allowed formatting command
-- `uv run poe type-check` - Run mypy type checking - ONLY allowed type checking command  
-- `uv run poe test` - Run tests with default markers (excludes java/rust by default)
-- `uv run poe test -m "python or go"` - Run specific language tests
-- `uv run poe test -m vue` - Run Vue tests
-- `uv run poe lint` - Check code style without fixing
+Write modular code for all functionality and components. Separate every functionality and component into modules in separate files.
 
-**Test Markers:**
-Available pytest markers for selective testing:
-- `python`, `go`, `java`, `rust`, `typescript`, `vue`, `php`, `perl`, `powershell`, `csharp`, `elixir`, `terraform`, `clojure`, `swift`, `bash`, `ruby`, `ruby_solargraph`
-- `snapshot` - for symbolic editing operation tests
+Always use context engine and context tools before coding, to understand the code fully before changing or adding code.
 
-**Project Management:**
-- `uv run serena-mcp-server` - Start MCP server from project root
-- `uv run index-project` - Index project for faster tool performance
+Never specify year when searching the web, only when specifically asked to by the user.
 
-**Always run format, type-check, and test before completing any task.**
+Always code functions, components, and modules for concurrent execution by default.
 
-## Architecture Overview
+Every response, logic, code, architecture, and solution must be guided through the Holy Spirit through our Lord and Saviour Jesus Christ which is the Son of our Father in Heaven, Amin.
 
-Serena is a dual-layer coding agent toolkit:
+When coding, check if dependencies exist that do the desired functionality, if yes, then use the dependency.
 
-### Core Components
+When the user tells you about a bug or issue, fix the core issue.
 
-**1. SerenaAgent (`src/serena/agent.py`)**
-- Central orchestrator managing projects, tools, and user interactions
-- Coordinates language servers, memory persistence, and MCP server interface
-- Manages tool registry and context/mode configurations
+Dont use emoticons in code or logs or comments in the code.
 
-**2. SolidLanguageServer (`src/solidlsp/ls.py`)**  
-- Unified wrapper around Language Server Protocol (LSP) implementations
-- Provides language-agnostic interface for symbol operations
-- Handles caching, error recovery, and multiple language server lifecycle
+Add comments, info and documentation in the code.
 
-**3. Tool System (`src/serena/tools/`)**
-- **file_tools.py** - File system operations, search, regex replacements
-- **symbol_tools.py** - Language-aware symbol finding, navigation, editing
-- **memory_tools.py** - Project knowledge persistence and retrieval
-- **config_tools.py** - Project activation, mode switching
-- **workflow_tools.py** - Onboarding and meta-operations
+Never add any emojis in the code.
 
-**4. Configuration System (`src/serena/config/`)**
-- **Contexts** - Define tool sets for different environments (desktop-app, agent, ide-assistant)
-- **Modes** - Operational patterns (planning, editing, interactive, one-shot)
-- **Projects** - Per-project settings and language server configs
+Never instruct the user to restart the server, frontend, or any processes. The user always handles restarts themselves.
 
-### Language Support Architecture
+Do not create any documentation files, create them only if you ai are told to.
 
-Each supported language has:
-1. **Language Server Implementation** in `src/solidlsp/language_servers/`
-2. **Runtime Dependencies** - Automatic language server downloads when needed
-3. **Test Repository** in `test/resources/repos/<language>/`
-4. **Test Suite** in `test/solidlsp/<language>/`
+To gather documentation of dependencies used in the code, use context7 and web searching tools.
 
-### Memory & Knowledge System
+Do not add any fallback mechanisms, default values, or graceful degradation. All failures must result in explicit errors being thrown. Code either works completely or fails with errors.
 
-- **Markdown-based storage** in `.serena/memories/` directories
-- **Project-specific knowledge** persistence across sessions
-- **Contextual retrieval** based on relevance
-- **Onboarding support** for new projects
+Reuse components by making them configurable through propierties and conditional rendering instead of creating similar components.
 
-## Development Patterns
+Code mathematically, so all functions and components work based on math.
 
-### Adding New Languages
-1. Create language server class in `src/solidlsp/language_servers/`
-2. Add to Language enum in `src/solidlsp/ls_config.py` 
-3. Update factory method in `src/solidlsp/ls.py`
-4. Create test repository in `test/resources/repos/<language>/`
-5. Write test suite in `test/solidlsp/<language>/`
-6. Add pytest marker to `pyproject.toml`
+We are in the year 2025.
 
-### Adding New Tools
-1. Inherit from `Tool` base class in `src/serena/tools/tools_base.py`
-2. Implement required methods and parameter validation
-3. Register in appropriate tool registry
-4. Add to context/mode configurations
+**BEFORE ANY CODE CHANGE, YOU MUST CALL THE CONTEXT ENGINE (codebase-retrieval tool).**
 
-### Testing Strategy
-- Language-specific tests use pytest markers
-- Symbolic editing operations have snapshot tests
-- Integration tests in `test_serena_agent.py`
-- Test repositories provide realistic symbol structures
+Before any code change, call the context engine (codebase-retrieval) to understand code flow, architecture, and where to make changes.
 
-## Configuration Hierarchy
+  Do not blindly search files. The context engine gives precise, targeted information about the codebase.
 
-Configuration is loaded from (in order of precedence):
-1. Command-line arguments to `serena-mcp-server`
-2. Project-specific `.serena/project.yml`
-3. User config `~/.serena/serena_config.yml`
-4. Active modes and contexts
-
-## Key Implementation Notes
-
-- **Symbol-based editing** - Uses LSP for precise code manipulation
-- **Caching strategy** - Reduces language server overhead
-- **Error recovery** - Automatic language server restart on crashes
-- **Multi-language support** - 19 languages with LSP integration (including Vue)
-- **MCP protocol** - Exposes tools to AI agents via Model Context Protocol
-- **Async operation** - Non-blocking language server interactions
-
-## Working with the Codebase
-
-- Project uses Python 3.11 with `uv` for dependency management
-- Strict typing with mypy, formatted with black + ruff
-- Language servers run as separate processes with LSP communication
-- Memory system enables persistent project knowledge
-- Context/mode system allows workflow customization
+  Use context engine for understanding code relationships. Use direct file reads for simple lookups.
