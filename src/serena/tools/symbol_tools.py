@@ -9,6 +9,7 @@ from typing import Any
 
 from serena.tools import (
     Tool,
+    ToolMarkerDoesNotRequireActiveProject,
     ToolMarkerSymbolicRead,
 )
 from solidlsp.ls_types import SymbolKind
@@ -30,7 +31,7 @@ def _sanitize_symbol_dict(symbol_dict: dict[str, Any]) -> dict[str, Any]:
     return symbol_dict
 
 
-class GetSymbolsOverviewTool(Tool, ToolMarkerSymbolicRead):
+class GetSymbolsOverviewTool(Tool, ToolMarkerSymbolicRead, ToolMarkerDoesNotRequireActiveProject):
     """
     Gets an overview of the top-level symbols defined in a given file.
     """
@@ -65,7 +66,7 @@ class GetSymbolsOverviewTool(Tool, ToolMarkerSymbolicRead):
         return self._limit_length(result_json_str, max_answer_chars)
 
 
-class FindSymbolTool(Tool, ToolMarkerSymbolicRead):
+class FindSymbolTool(Tool, ToolMarkerSymbolicRead, ToolMarkerDoesNotRequireActiveProject):
     """
     Performs a global search using the language server backend.
     """
@@ -132,7 +133,7 @@ class FindSymbolTool(Tool, ToolMarkerSymbolicRead):
         return self._limit_length(result, max_answer_chars)
 
 
-class FindReferencingSymbolsTool(Tool, ToolMarkerSymbolicRead):
+class FindReferencingSymbolsTool(Tool, ToolMarkerSymbolicRead, ToolMarkerDoesNotRequireActiveProject):
     """
     Finds symbols that reference the given symbol using the language server backend
     """
